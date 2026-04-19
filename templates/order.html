@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Заказ хлеба</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #fdf8f0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .card {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    padding: 40px 36px;
+    width: 100%;
+    max-width: 480px;
+  }
+  .logo { font-size: 2rem; text-align: center; margin-bottom: 4px; }
+  h1 {
+    text-align: center;
+    font-size: 1.4rem;
+    color: #3d2b1f;
+    margin-bottom: 28px;
+  }
+  label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #5a3e2b;
+    margin-bottom: 4px;
+    margin-top: 16px;
+  }
+  input, select, textarea {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1.5px solid #d9c9b8;
+    border-radius: 8px;
+    font-size: 1rem;
+    color: #3d2b1f;
+    background: #fffdf9;
+    transition: border-color 0.2s;
+    outline: none;
+  }
+  input:focus, select:focus, textarea:focus { border-color: #b07c4f; }
+  input.invalid { border-color: #e05c5c; }
+  textarea { resize: vertical; min-height: 80px; }
+
+  /* date placeholder trick */
+  .date-wrap { position: relative; }
+  .date-wrap input[type=date] { color: #3d2b1f; }
+  .date-wrap input[type=date].empty { color: transparent; }
+  .date-ph {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1rem;
+    color: #b0967a;
+    pointer-events: none;
+  }
+
+  .field-error {
+    font-size: 0.8rem;
+    color: #c0392b;
+    margin-top: 4px;
+    display: none;
+  }
+  .field-error.visible { display: block; }
+
+  .menu-hint {
+    margin-top: 10px;
+    padding: 12px 14px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    display: none;
+  }
+  .menu-hint span { white-space: pre-line; font-weight: 600; }
+  .menu-hint.has-menu {
+    background: #f0f7f0;
+    border: 1.5px solid #c3dcc3;
+    color: #3a5c3a;
+  }
+  .menu-hint.no-menu {
+    background: #fdfae8;
+    border: 1.5px solid #e8dfa0;
+    color: #6b5c1a;
+  }
+  .section-title {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #9e7a5a;
+    margin-top: 24px;
+    margin-bottom: 2px;
+  }
+  .btn {
+    display: block;
+    width: 100%;
+    margin-top: 28px;
+    padding: 13px;
+    background: #b07c4f;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 1.05rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .btn:hover { background: #8f6038; }
+  .alert {
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-size: 0.95rem;
+  }
+  .alert-success { background: #eaf7ea; color: #2d6e2d; border: 1px solid #b2dfb2; }
+  .alert-error   { background: #fdecea; color: #8b1a1a; border: 1px solid #f5c6c6; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">🍞</div>
+  <h1>Оформить заказ</h1>
+
+  {{if .Success}}
+  <div class="alert alert-success">Ваш заказ принят! Ждём вас.</div>
+  {{end}}
+  {{if .Error}}
+  <div class="alert alert-error">{{.Error}}</div>
+  {{end}}
+
+  <form method="POST" action="/order" id="order-form" novalidate>
+
+    <div class="section-title">Контакты</div>
+
+    <label for="name">Имя</label>
+    <input type="text" id="name" name="name" placeholder="Как вас зовут" autocomplete="given-name">
+
+    <label for="phone">Номер телефона</label>
+    <input type="tel" id="phone" name="phone" placeholder="+7 900 000-00-00" autocomplete="tel">
+    <div class="field-error" id="phone-error">Введите корректный номер (не менее 10 цифр)</div>
+
+    <label for="telegram">Ник в Telegram</label>
+    <input type="text" id="telegram" name="telegram" placeholder="@username">
+
+    <label for="whatsapp">или в WhatsApp</label>
+    <input type="text" id="whatsapp" name="whatsapp" placeholder="+7 900 000-00-00">
+
+    <label for="max_contact">или в MAX</label>
+    <input type="text" id="max_contact" name="max_contact" placeholder="Номер или ник в MAX">
+
+    <div class="section-title">Заказ</div>
+
+    <label for="order_date">Дата получения</label>
+    <div class="date-wrap">
+      <input type="date" id="order_date" name="order_date" class="empty" required>
+      <span class="date-ph" id="date-ph">Выберите дату</span>
+    </div>
+    <div class="menu-hint has-menu" id="menu-hint" style="display:none">
+      <div style="font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px;opacity:0.7">Свежая выпечка на этот день 🍞</div><span id="menu-hint-text"></span></div>
+
+    <label for="notes">Что заказываете</label>
+    <textarea id="notes" name="notes" placeholder="Например: белый хлеб 1 шт, ржаной 2 шт..."></textarea>
+
+    <label for="pickup_method">Способ получения</label>
+    <select id="pickup_method" name="pickup_method">
+      <option value="Пекарня">В пекарне</option>
+      <option value="Подъезд">В подъезде</option>
+    </select>
+
+    <button class="btn" type="submit">Отправить заказ</button>
+  </form>
+</div>
+
+<script>
+  const dateInput   = document.getElementById("order_date");
+  const datePh      = document.getElementById("date-ph");
+  const menuHint    = document.getElementById("menu-hint");
+  const menuHintText = document.getElementById("menu-hint-text");
+  const phoneInput  = document.getElementById("phone");
+  const phoneError  = document.getElementById("phone-error");
+
+  // ── date placeholder ──────────────────────────────────────────
+  function updateDatePh() {
+    const hasVal = !!dateInput.value;
+    dateInput.classList.toggle("empty", !hasVal);
+    datePh.style.display = hasVal ? "none" : "";
+  }
+  dateInput.addEventListener("change", updateDatePh);
+  updateDatePh();
+
+  // ── menu hint ─────────────────────────────────────────────────
+  function loadMenu(date) {
+    if (!date) { 
+      menuHint.style.display = "none";
+      return;
+    }
+    fetch("/api/menu?date=" + date)
+      .then(r => r.text())
+      .then(text => {
+        const hasMenu = !!text.trim();
+        menuHint.style.display = "block";
+        menuHint.className = "menu-hint " + (hasMenu ? "has-menu" : "no-menu");
+        menuHint.querySelector("div").style.display = hasMenu ? "" : "none";
+        menuHintText.textContent = hasMenu ? text.trim() : "😔 В этот день пекарня не работает 🍞";
+      });
+  }
+  dateInput.addEventListener("change", () => loadMenu(dateInput.value));
+
+  // ── phone validation ──────────────────────────────────────────
+  function validatePhone() {
+    const val = phoneInput.value.trim();
+    if (!val) return false; // empty is ok — other contact fields exist
+    const digits = val.replace(/\D/g, "");
+    const ok = digits.length >= 10;
+    phoneInput.classList.toggle("invalid", !ok);
+    phoneError.classList.toggle("visible", !ok);
+    return ok;
+  }
+  phoneInput.addEventListener("input", validatePhone);
+
+  document.getElementById("order-form").addEventListener("submit", function(e) {
+    if (!validatePhone()) e.preventDefault();
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    environment:
+      PORT: "8080"
+      DB_PATH: /app/data/orders.db
+      ADMIN_LOGIN: ${ADMIN_LOGIN}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+    volumes:
+      - ./data:/app/data
+    networks:
+      - web
+    labels:
+      caddy: ${DEPLOY_DOMAIN}
+      caddy.reverse_proxy: "{{upstreams 8080}}"
+
+networks:
+  web:
+    external: true

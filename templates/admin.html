@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Заказы — Пекарня</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #fdf8f0;
+    min-height: 100vh;
+    padding: 28px 20px;
+    color: #3d2b1f;
+  }
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 900px;
+    margin: 0 auto 28px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .topbar-left { display: flex; align-items: center; gap: 10px; }
+  .topbar-left .logo { font-size: 1.6rem; }
+  .topbar-left h1 { font-size: 1.25rem; font-weight: 600; }
+  .btn-logout {
+    padding: 7px 16px;
+    background: transparent;
+    border: 1.5px solid #d9c9b8;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    color: #7a5c42;
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .btn-logout:hover { border-color: #b07c4f; color: #b07c4f; }
+
+  /* ── section wrapper ── */
+  .section {
+    max-width: 900px;
+    margin: 0 auto 32px;
+  }
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .section-title {
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: #9e7a5a;
+  }
+
+  /* ── card base ── */
+  .card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    padding: 18px 20px;
+  }
+
+  /* ── date-bar (orders filter) ── */
+  .date-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .date-bar label { font-size: 0.85rem; font-weight: 600; color: #5a3e2b; white-space: nowrap; }
+  input[type=date] {
+    padding: 8px 12px;
+    border: 1.5px solid #d9c9b8;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    color: #3d2b1f;
+    background: #fffdf9;
+    outline: none;
+  }
+  input[type=date]:focus { border-color: #b07c4f; }
+  .count-badge { margin-left: auto; font-size: 0.85rem; color: #9e7a5a; }
+
+  /* ── date placeholder ── */
+  .date-wrap { position: relative; display: inline-block; }
+  .date-wrap input[type=date].empty { color: transparent; }
+  .date-ph {
+    position: absolute;
+    left: 12px; top: 50%; transform: translateY(-50%);
+    font-size: 0.95rem; color: #b0967a; pointer-events: none;
+  }
+
+  /* ── hide delivered toggle ── */
+  .orders.hide-delivered .order-card.delivered { display: none; }
+
+  /* ── buttons ── */
+  .btn {
+    padding: 8px 18px;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+    white-space: nowrap;
+  }
+  .btn-primary   { background: #b07c4f; color: #fff; }
+  .btn-primary:hover { background: #8f6038; }
+  .btn-ghost {
+    background: transparent;
+    border: 1.5px solid #d9c9b8;
+    color: #7a5c42;
+    padding: 6px 14px;
+  }
+  .btn-ghost:hover { border-color: #b07c4f; color: #b07c4f; }
+  .btn-sm { padding: 5px 11px; font-size: 0.78rem; border-radius: 6px; }
+  .btn-deliver   { background: #f0e8db; color: #5a3e2b; }
+  .btn-deliver:hover { background: #e0d0bc; }
+  .btn-undeliver { background: #f0e8db; color: #7a5c42; }
+  .btn-undeliver:hover { background: #e0d0bc; }
+  .btn-danger    { background: #fdecea; color: #8b1a1a; }
+  .btn-danger:hover { background: #f5c6c6; }
+
+  /* ── menu add form ── */
+  .menu-form { display: flex; flex-direction: column; gap: 12px; }
+  .menu-form-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .menu-field-label { font-size: 0.85rem; font-weight: 600; color: #5a3e2b; white-space: nowrap; }
+  .menu-form textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1.5px solid #d9c9b8;
+    border-radius: 8px;
+    font-size: 0.92rem;
+    font-family: inherit;
+    color: #3d2b1f;
+    background: #fffdf9;
+    resize: vertical;
+    min-height: 72px;
+    outline: none;
+  }
+  .menu-form textarea:focus { border-color: #b07c4f; }
+
+  /* ── menu list ── */
+  .menu-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .menu-entry {
+    background: #fff8ee;
+    border: 1.5px solid #e8d8c0;
+    border-radius: 10px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+  }
+  .menu-entry.hidden-entry {
+    opacity: 0.5;
+    background: #f5f0ea;
+    border-color: #d9c9b8;
+  }
+  .menu-entry-date {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #b07c4f;
+    white-space: nowrap;
+    padding-top: 1px;
+    min-width: 90px;
+  }
+  .menu-entry-text {
+    flex: 1;
+    font-size: 0.92rem;
+    color: #3d2b1f;
+    white-space: pre-line;
+    line-height: 1.5;
+  }
+  .menu-entry-actions { display: flex; gap: 6px; flex-shrink: 0; flex-wrap: wrap; align-items: stretch; }
+  .menu-entry-actions form { display: flex; }
+  .menu-entry-actions .btn { align-self: stretch; }
+
+  .hidden-section { margin-top: 10px; display: none; }
+  .hidden-section.visible { display: flex; flex-direction: column; gap: 10px; }
+  .hidden-divider {
+    font-size: 0.75rem;
+    color: #b0967a;
+    text-align: center;
+    padding: 4px 0 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  /* ── orders ── */
+  .orders { display: flex; flex-direction: column; gap: 12px; }
+
+  .order-card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    padding: 18px 20px;
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    transition: opacity 0.2s;
+  }
+  .order-card.delivered { opacity: 0.55; background: #f5f0ea; }
+  .order-card.delivered .order-id { background: #ccc; }
+
+  .order-id {
+    background: #b07c4f;
+    color: #fff;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 4px 10px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .order-body { flex: 1; min-width: 0; }
+  .contacts { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-bottom: 8px; }
+  .contact-item { font-size: 0.9rem; color: #5a3e2b; display: flex; gap: 4px; align-items: center; }
+  .contact-label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #b07c4f; }
+  .order-name { font-size: 1rem; font-weight: 600; color: #3d2b1f; margin-bottom: 6px; }
+  .notes-line { font-size: 0.92rem; color: #3d2b1f; margin-top: 6px; white-space: pre-line; }
+  .notes-label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #9e7a5a; margin-right: 4px; }
+  .meta-line { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 0.8rem; color: #9e7a5a; }
+  .pickup-badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; background: #f0e8db; color: #7a5c42; }
+  .status-badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; }
+  .status-pending { background: #fef3e2; color: #a05c00; }
+  .status-done    { background: #e6f4ea; color: #1e5c2e; }
+  .date-label     { font-size: 0.72rem; color: #b0967a; }
+  .order-actions  { display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; }
+  .order-actions .btn-danger { margin-top: 16px; }
+
+  .empty { text-align: center; padding: 48px 20px; color: #9e7a5a; font-size: 1rem; }
+
+  @media (max-width: 540px) {
+    .order-card { flex-direction: column; gap: 12px; }
+    .order-actions { flex-direction: row; }
+    .menu-entry { flex-direction: column; gap: 8px; }
+    .menu-entry-actions { align-self: flex-end; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <span class="logo">🍞</span>
+    <h1>Пекарня</h1>
+  </div>
+  <form method="POST" action="/admin/logout">
+    <button class="btn btn-ghost" type="submit">Выйти</button>
+  </form>
+</div>
+
+<!-- ── МЕНЮ ВЫПЕЧКИ ─────────────────────────────────────────── -->
+<div class="section">
+  <div class="section-header">
+    <span class="section-title">Расписание выпечки</span>
+    {{if .MenuEntries}}
+    <button class="btn btn-ghost btn-sm" id="btn-show-hidden" onclick="toggleHidden()" type="button">
+      Показать скрытые
+    </button>
+    {{end}}
+  </div>
+
+  <!-- форма добавления/редактирования -->
+  <div class="card" style="margin-bottom:12px">
+    <form class="menu-form" method="POST" action="/admin/menu">
+      <input type="hidden" name="orders_date" value="{{.Date}}">
+      <div class="menu-form-row">
+        <span class="menu-field-label">Дата:</span>
+        <div class="date-wrap">
+          <input type="date" name="date" id="menu-date" class="empty" required>
+          <span class="date-ph" id="menu-date-ph">Выберите дату</span>
+        </div>
+        <button class="btn btn-primary" type="submit">Сохранить</button>
+      </div>
+      <textarea name="menu_text" id="menu-textarea"
+        placeholder="Что будет выпекаться в этот день..."></textarea>
+    </form>
+  </div>
+
+  <!-- список записей -->
+  <div class="menu-list" id="menu-visible">
+    {{range .MenuEntries}}{{if not .Hidden}}
+    <div class="menu-entry">
+      <div class="menu-entry-date">{{.Date}}</div>
+      <div class="menu-entry-text">{{.Text}}</div>
+      <div class="menu-entry-actions">
+        <form method="POST" action="/admin/menu/{{.Date}}/hide">
+          <input type="hidden" name="orders_date" value="{{$.Date}}">
+          <button class="btn btn-ghost btn-sm" type="submit">Скрыть</button>
+        </form>
+        <form method="POST" action="/admin/menu/{{.Date}}/delete">
+          <input type="hidden" name="orders_date" value="{{$.Date}}">
+          <button class="btn btn-danger btn-sm" type="submit">Удалить</button>
+        </form>
+      </div>
+    </div>
+    {{end}}{{end}}
+  </div>
+
+  <!-- скрытые записи -->
+  <div class="hidden-section" id="hidden-section">
+    <div class="hidden-divider">— скрытые —</div>
+    {{range .MenuEntries}}{{if .Hidden}}
+    <div class="menu-entry hidden-entry">
+      <div class="menu-entry-date">{{.Date}}</div>
+      <div class="menu-entry-text">{{.Text}}</div>
+      <div class="menu-entry-actions">
+        <form method="POST" action="/admin/menu/{{.Date}}/show">
+          <input type="hidden" name="orders_date" value="{{$.Date}}">
+          <button class="btn btn-ghost btn-sm" type="submit">Показать</button>
+        </form>
+        <form method="POST" action="/admin/menu/{{.Date}}/delete">
+          <input type="hidden" name="orders_date" value="{{$.Date}}">
+          <button class="btn btn-danger btn-sm" type="submit">Удалить</button>
+        </form>
+      </div>
+    </div>
+    {{end}}{{end}}
+  </div>
+</div>
+
+<!-- ── ЗАКАЗЫ ───────────────────────────────────────────────── -->
+<div class="section">
+  <div class="section-header">
+    <span class="section-title">Заказы</span>
+    {{if .Orders}}
+    <button class="btn btn-ghost btn-sm" id="btn-show-delivered" onclick="toggleDelivered()" type="button">
+      Показать выданные
+    </button>
+    {{end}}
+  </div>
+
+  <form method="GET" action="/admin">
+    <div class="card date-bar" style="margin-bottom:16px">
+      <label for="date">Дата:</label>
+      <div class="date-wrap">
+        <input type="date" id="date" name="date" value="{{.Date}}">
+        <span class="date-ph" id="orders-date-ph">Выберите дату</span>
+      </div>
+      <button class="btn btn-primary" type="submit">Показать</button>
+      {{if .Orders}}
+      <span class="count-badge">{{len .Orders}} заказ(ов)</span>
+      {{end}}
+    </div>
+  </form>
+
+  <div class="orders hide-delivered" id="orders-list">
+    {{if not .Orders}}
+    <div class="empty">Нет заказов на выбранную дату</div>
+    {{end}}
+
+    {{range .Orders}}
+    <div class="order-card {{if .Delivered}}delivered{{end}}">
+      <div class="order-id">#{{.ID}}</div>
+      <div class="order-body">
+        {{if .Name}}<div class="order-name">{{.Name}}</div>{{end}}
+        <div class="contacts">
+          {{if .Phone}}
+          <div class="contact-item">
+            <span class="contact-label">Тел</span>
+            <span>{{.Phone}}</span>
+          </div>
+          {{end}}
+          {{if .Telegram}}
+          <div class="contact-item">
+            <span class="contact-label">TG</span>
+            <span>{{.Telegram}}</span>
+          </div>
+          {{end}}
+          {{if .Whatsapp}}
+          <div class="contact-item">
+            <span class="contact-label">WA</span>
+            <span>{{.Whatsapp}}</span>
+          </div>
+          {{end}}
+          {{if .MaxContact}}
+          <div class="contact-item">
+            <span class="contact-label">MAX</span>
+            <span>{{.MaxContact}}</span>
+          </div>
+          {{end}}
+        </div>
+        {{if .Notes}}
+        <div class="notes-line">
+          <span class="notes-label">Заказ:</span>{{.Notes}}
+        </div>
+        {{end}}
+        <div class="meta-line">
+          <span class="pickup-badge">{{.PickupMethod}}</span>
+          {{if .Delivered}}
+          <span class="status-badge status-done">✓ Выдан</span>
+          {{else}}
+          <span class="status-badge status-pending">К выдаче</span>
+          {{end}}
+          <span><span class="date-label">оформлен:</span> {{.CreatedAt}}</span>
+        </div>
+      </div>
+      <div class="order-actions">
+        {{if not .Delivered}}
+        <form method="POST" action="/admin/orders/{{.ID}}/deliver">
+          <input type="hidden" name="date" value="{{$.Date}}">
+          <button class="btn btn-deliver btn-sm" type="submit">Выдан</button>
+        </form>
+        {{else}}
+        <form method="POST" action="/admin/orders/{{.ID}}/undeliver">
+          <input type="hidden" name="date" value="{{$.Date}}">
+          <button class="btn btn-undeliver btn-sm" type="submit">Отменить</button>
+        </form>
+        {{end}}
+        <form method="POST" action="/admin/orders/{{.ID}}/delete">
+          <input type="hidden" name="date" value="{{$.Date}}">
+          <button class="btn btn-danger btn-sm" type="submit">Удалить</button>
+        </form>
+      </div>
+    </div>
+    {{end}}
+  </div>
+</div>
+
+<script>
+const allMenus = {{.MenuJSON}};
+
+// ── date placeholder helper ───────────────────────────────────
+function initDatePh(inputId, phId) {
+  const input = document.getElementById(inputId);
+  const ph    = document.getElementById(phId);
+  if (!input) return;
+  function update() {
+    const has = !!input.value;
+    input.classList.toggle("empty", !has);
+    ph.style.display = has ? "none" : "";
+  }
+  input.addEventListener("change", update);
+  update();
+}
+initDatePh("date",      "orders-date-ph");
+initDatePh("menu-date", "menu-date-ph");
+
+// ── menu form: pre-fill textarea on date select ───────────────
+document.getElementById("menu-date").addEventListener("change", function() {
+  const entry = allMenus.find(e => e.date === this.value);
+  document.getElementById("menu-textarea").value = entry ? entry.text : "";
+});
+
+// ── toggle hidden menu entries ────────────────────────────────
+function toggleHidden() {
+  const sec = document.getElementById("hidden-section");
+  const btn = document.getElementById("btn-show-hidden");
+  const visible = sec.classList.toggle("visible");
+  btn.textContent = visible ? "Скрыть скрытые" : "Показать скрытые";
+}
+
+// ── confirm delete ────────────────────────────────────────────
+document.querySelectorAll("form[action*='/delete']").forEach(f => {
+  f.addEventListener("submit", e => { if (!confirm("Удалить? Это действие нельзя отменить.")) e.preventDefault(); });
+});
+
+// ── toggle delivered orders ───────────────────────────────────
+function toggleDelivered() {
+  const list = document.getElementById("orders-list");
+  const btn  = document.getElementById("btn-show-delivered");
+  const hiding = list.classList.toggle("hide-delivered");
+  btn.textContent = hiding ? "Показать выданные" : "Скрыть выданные";
+}
+</script>
+</body>
+</html>

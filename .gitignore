@@ -1,0 +1,17 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# env
+.env
+
+# data
+data/
+*.db
+
+# binary
+bread_orders
